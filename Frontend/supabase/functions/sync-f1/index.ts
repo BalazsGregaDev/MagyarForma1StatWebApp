@@ -280,61 +280,67 @@ async function renumberRounds(db: SupabaseClient, season: number) {
 /* =====================================================================
    TASK: DRIVERS – versenyzők és csapatok
    ===================================================================== */
-
 async function syncDrivers(
   db: SupabaseClient,
   api: F1DataProvider,
   season: number,
 ): Promise<number> {
-  // A legutóbbi futam mezőnye a mérvadó az aktuális csapatokra.
+  // MINDEN futam mezőnyét bejárjuk, nem csak az utolsóét.
+  //
+  // Korábban csak a legutóbbi futam ~20 pilótája kapott OpenF1-számot,
+  // és az upsertRaceResults minden más sort kiszűrt. Egy szezonban
+  // viszont 24-26 pilóta fordul meg: sérülések, csereversenyzők,
+  // évközi váltások miatt.
   const { data: races } = await db
     .from("grandprix")
     .select("openf1_session_key")
     .eq("Year", season)
     .not("openf1_session_key", "is", null)
-    .order("RaceDate", { ascending: false })
-    .limit(1);
+    .order("RaceDate", { ascending: false });
 
-  const sessionKey = (races?.[0] as { openf1_session_key: number } | undefined)
-    ?.openf1_session_key;
-  if (!sessionKey) throw new Error("Nincs futam session_key. Futtasd előbb a 'calendar' taskot.");
+  const sessionKeys = (races ?? [])
+    .map((r) => (r as { openf1_session_key: number }).openf1_session_key)
+    .filter(Boolean);
 
-  const drivers = await api.drivers(sessionKey);
+  if (!sessionKeys.length) {
+    throw new Error("Nincs futam session_key. Futtasd előbb a 'calendar' taskot.");
+  }
+
+  const seen = new Set<number>();
   let n = 0;
 
-  for (const d of drivers) {
-    const colour = normaliseColour(d.team_colour);
+  for (const sessionKey of sessionKeys) {
+    const drivers = await api.drivers(sessionKey);
 
-    const { data: team } = await db
-      .from("constructors")
-      .upsert(
+    for (const d of drivers) {
+      if (seen.has(d.driver_number)) continue;   // már megvan
+      seen.add(d.driver_number);
+
+      const colour = normaliseColour(d.team_colour);
+
+      const { data: team } = await db
+        .from("constructors")
+        .upsert(
+          { openf1_team_name: d.team_name, Name: d.team_name, TeamColour: colour },
+          { onConflict: "openf1_team_name" },
+        )
+        .select("ConstructorID")
+        .single();
+
+      const { error } = await db.from("drivers").upsert(
         {
-          openf1_team_name: d.team_name,
-          Name: d.team_name,
-          TeamColour: colour,
+          openf1_driver_number: d.driver_number,
+          DriverNumber: d.driver_number,
+          Name: d.full_name,
+          Acronym: d.name_acronym,
+          Nationality: d.country_code,
+          ConstructorID: team?.ConstructorID ?? null,
         },
-        { onConflict: "openf1_team_name" },
-      )
-      .select("ConstructorID")
-      .single();
-
-    // FIGYELEM: a headshot_url mezőt SZÁNDÉKOSAN nem vesszük át.
-    // Az a media.formula1.com-ra mutat, és szerzői jogvédett
-    // (lásd kephasznalat_es_jogok.md). Helyette a DriverAvatar
-    // komponens generál SVG-t a rajtszámból és a csapatszínből.
-    const { error } = await db.from("drivers").upsert(
-      {
-        openf1_driver_number: d.driver_number,
-        DriverNumber: d.driver_number,
-        Name: d.full_name,
-        Acronym: d.name_acronym,
-        Nationality: d.country_code,
-        ConstructorID: team?.ConstructorID ?? null,
-      },
-      { onConflict: "openf1_driver_number" },
-    );
-    if (error) throw new Error(`drivers upsert: ${error.message}`);
-    n++;
+        { onConflict: "openf1_driver_number" },
+      );
+      if (error) throw new Error(`drivers upsert: ${error.message}`);
+      n++;
+    }
   }
   return n;
 }
