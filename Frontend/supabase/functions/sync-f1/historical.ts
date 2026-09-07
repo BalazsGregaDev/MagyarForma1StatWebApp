@@ -210,8 +210,13 @@ export async function syncHistoricalSeason(
         is_classified: classified,
         car_number: res.number ? Number(res.number) : null,
         data_source: "jolpica",
-        // Points: SZÁNDÉKOSAN nincs. A b_assign_points trigger számolja
-        // a season_points táblából, korszakhelyesen.
+
+        // A FORRÁS PONTJA A MÉRVADÓ (1950-2022). Az Ergast a hivatalos
+        // végeredményt adja, amit a trigger nem tud reprodukálni:
+        // leggyorsabb kör 1950-59 (nincs az adatban), megosztott
+        // leggyorsabb kör, félpontos futamok. A seasons.trust_source_points
+        // kapcsoló miatt a trigger ezekben az években nem írja felül.
+        Points: res.points ? Number(res.points) : 0,
       });
 
       // Nevezés (versenyző + csapat + szezon)
@@ -230,7 +235,12 @@ export async function syncHistoricalSeason(
       }
     }
 
-     const byPosition = new Map<number, typeof batch>();
+    // --- MEGOSZTOTT AUTÓK (1950-1957) ---------------------------------
+    // Az Ergast nem jelöli külön, hogy két pilóta ugyanazt a kocsit
+    // vezette — csak annyi látszik, hogy ugyanaz a pozíció kétszer
+    // szerepel. Közös csoportazonosítót adunk nekik, különben a
+    // race_result_unique_position index elutasítja a második sort.
+    const byPosition = new Map<number, Record<string, unknown>[]>();
     for (const row of batch) {
       const pos = row.Position as number | null;
       if (pos == null) continue;
@@ -240,14 +250,18 @@ export async function syncHistoricalSeason(
     }
 
     let group = 0;
-    for (const [, rows] of byPosition) {
-      if (rows.length > 1) {
+    for (const sameSpot of byPosition.values()) {
+      if (sameSpot.length > 1) {
         group++;
-        for (const row of rows) row.shared_drive_group = group;
+        for (const row of sameSpot) row.shared_drive_group = group;
       }
     }
 
-        const bestByDriver = new Map<number, Record<string, unknown>>();
+    // --- AZONOS VERSENYZŐ TÖBBSZÖR (Indianapolis 500, 1950-1960) ------
+    // A Postgres egyetlen ON CONFLICT parancson belül nem írhat kétszer
+    // ugyanarra a kulcsra. Elsődlegesen a több pont dönt, azonos pontnál
+    // a jobb helyezés.
+    const bestByDriver = new Map<number, Record<string, unknown>>();
     for (const row of batch) {
       const key = row.DriverID as number;
       const prev = bestByDriver.get(key);
@@ -255,18 +269,24 @@ export async function syncHistoricalSeason(
         bestByDriver.set(key, row);
         continue;
       }
-      const a = (row.Position as number | null) ?? 999;
-      const b = (prev.Position as number | null) ?? 999;
-      if (a < b) bestByDriver.set(key, row);
+      const pNew = (row.Points as number) ?? 0;
+      const pOld = (prev.Points as number) ?? 0;
+      if (pNew > pOld) {
+        bestByDriver.set(key, row);
+      } else if (pNew === pOld) {
+        const a = (row.Position as number | null) ?? 999;
+        const b = (prev.Position as number | null) ?? 999;
+        if (a < b) bestByDriver.set(key, row);
+      }
     }
     const deduped = [...bestByDriver.values()];
 
     const { error } = await db
       .from("race_result")
-      .upsert(batch, { onConflict: "GrandPrixID,DriverID,GpOrSprint" });
+      .upsert(deduped, { onConflict: "GrandPrixID,DriverID,GpOrSprint" });
 
     if (error) throw new Error(`race_result upsert (${r.raceName}): ${error.message}`);
-    rows += batch.length;
+    rows += deduped.length;
   }
 
   // --- 4. Időmérő (az Ergast 1994-től tartalmazza) -------------------
@@ -299,8 +319,10 @@ export async function syncHistoricalSeason(
       }
     } catch (e) {
       // Az időmérő hiánya ne buktassa el az egész szezont — a
-      // futameredmények már bementek.
-      console.warn(`Időmérő kihagyva ${year}: ${e instanceof Error ? e.message : e}`);
+      // futameredmények már bementek. De KERÜLJÖN A NAPLÓBA: egy néma
+      // console.warn miatt 73 szezonon át elveszett az összes időmérős
+      // adat, és csak a függvény logjában látszott.
+      await logSubtaskError(db, year, "historical-quali", e);
     }
   }
 
@@ -320,7 +342,7 @@ export async function syncHistoricalSeason(
             DriverID: await cache.driver(res.Driver),
             ConstructorID: await cache.team(res.Constructor),
             Position: classified ? Number(res.position) : null,
-            Grid: res.grid ? Number(res.grid) : null,
+            Grid: res.grid && Number(res.grid) > 0 ? Number(res.grid) : null,
             Laps: res.laps ? Number(res.laps) : null,
             TimeOrRetired: res.Time?.time ?? res.status ?? null,
             FastestLap: false,
@@ -328,6 +350,7 @@ export async function syncHistoricalSeason(
             status_id: mapStatus(res.status ?? "", res.positionText),
             is_classified: classified,
             data_source: "jolpica",
+            Points: res.points ? Number(res.points) : 0,
           });
         }
         const { error } = await db
@@ -337,11 +360,42 @@ export async function syncHistoricalSeason(
         rows += batch.length;
       }
     } catch (e) {
-      console.warn(`Sprint kihagyva ${year}: ${e instanceof Error ? e.message : e}`);
+      await logSubtaskError(db, year, "historical-sprint", e);
     }
   }
 
   return rows;
+}
+
+/* =====================================================================
+   RÉSZFELADAT-HIBÁK NAPLÓZÁSA
+
+   Az időmérő és a sprint hibája nem buktatja el a szezont, de nem is
+   veszhet el némán. Így az /admin/sync előzmények táblájában látszik.
+   ===================================================================== */
+
+async function logSubtaskError(
+  db: SupabaseClient,
+  year: number,
+  task: string,
+  e: unknown,
+): Promise<void> {
+  const msg = e instanceof Error ? e.message : String(e);
+  console.warn(`${task} kihagyva ${year}: ${msg}`);
+  try {
+    await db.from("sync_log").insert({
+      provider: "jolpica",
+      task,
+      season: year,
+      status: "error",
+      rows_upserted: 0,
+      requests_made: 0,
+      message: msg,
+      finished_at: new Date().toISOString(),
+    });
+  } catch {
+    /* a naplózás hibája ne buktassa el a szinkront */
+  }
 }
 
 /* =====================================================================
