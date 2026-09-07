@@ -247,6 +247,20 @@ export async function syncHistoricalSeason(
       }
     }
 
+        const bestByDriver = new Map<number, Record<string, unknown>>();
+    for (const row of batch) {
+      const key = row.DriverID as number;
+      const prev = bestByDriver.get(key);
+      if (!prev) {
+        bestByDriver.set(key, row);
+        continue;
+      }
+      const a = (row.Position as number | null) ?? 999;
+      const b = (prev.Position as number | null) ?? 999;
+      if (a < b) bestByDriver.set(key, row);
+    }
+    const deduped = [...bestByDriver.values()];
+
     const { error } = await db
       .from("race_result")
       .upsert(batch, { onConflict: "GrandPrixID,DriverID,GpOrSprint" });
