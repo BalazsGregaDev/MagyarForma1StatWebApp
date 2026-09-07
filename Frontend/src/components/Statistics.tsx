@@ -18,7 +18,7 @@ import type {
   ConstructorStatsResult,
 } from "../database.types";
 import DriverAvatar from "../components/DriverAvatar";
-import "../styles/statistics.css";
+import "../Styles/statistics.css";
 
 type Tab = "drivers" | "constructors";
 

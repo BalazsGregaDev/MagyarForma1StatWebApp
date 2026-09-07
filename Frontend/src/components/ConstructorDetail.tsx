@@ -3,14 +3,14 @@
 // ---------------------------------------------------------------------
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import api, { teamGradient } from "../../lib/api";
+import api, { teamGradient } from "../api";
 import type {
   Constructor,
   Driver,
   ConstructorStatsResult,
-} from "../../lib/database.types";
-import DriverAvatar from "../../components/DriverAvatar";
-import "../../styles/constructor.css";
+} from "../database.types";
+import DriverAvatar from "../components/DriverAvatar";
+import "../Styles/constructor.css";
 
 type TeamWithDrivers = Constructor & { drivers: Driver[] };
 

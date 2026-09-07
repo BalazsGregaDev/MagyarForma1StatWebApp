@@ -10,7 +10,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../api";
 import type { GrandPrix } from "../database.types";
 import { useAuth } from "../AuthContext";
-import "../styles/grandprix.css";
+import "../Styles/grandprix.css";
 
 /** Az ország zászlószíneit a hover-effekthez a CSS oldja meg
  *  (.grandprix-row[data-country="Hungary"] stb.). */

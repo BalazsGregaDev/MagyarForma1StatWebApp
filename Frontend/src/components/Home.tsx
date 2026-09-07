@@ -13,7 +13,7 @@ import { Link } from "react-router-dom";
 import api, { teamGradient, type NewsItem } from "../api";
 import type { Driver, Constructor } from "../database.types";
 import DriverAvatar from "../components/DriverAvatar";
-import "../styles/home.css";
+import "../Styles/home.css";
 
 /** "Ezen a napon" – statikus, saját szerkesztésű tartalom.
  *  Bővíthető; kulcs formátuma "MM-DD". */

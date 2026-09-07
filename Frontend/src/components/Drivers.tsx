@@ -11,7 +11,7 @@ import api, { teamGradient } from "../api";
 import type { Driver, Constructor } from "../database.types";
 import { useAuth } from "../AuthContext";
 import DriverAvatar from "../components/DriverAvatar";
-import "../styles/driver.css";
+import "../Styles/driver.css";
 
 const DriversPage: React.FC = () => {
   const [drivers, setDrivers] = useState<Driver[]>([]);

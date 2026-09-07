@@ -10,7 +10,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api, { teamGradient } from "../api";
 import type { Constructor } from "../database.types";
 import { useAuth } from "../AuthContext";
-import "../styles/constructor.css";
+import "../Styles/constructor.css";
 
 const ConstructorPage: React.FC = () => {
   const [constructors, setConstructors] = useState<Constructor[]>([]);

@@ -16,9 +16,9 @@
 // ---------------------------------------------------------------------
 import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import api from "../lib/api";
-import type { Driver, Constructor, GrandPrix, RaceResult } from "../lib/database.types";
-import "../styles/driver.css";
+import api from "../../api";
+import type { Driver, Constructor, GrandPrix, RaceResult } from "../../database.types";
+import "../../Styles/driver.css";
 
 type Row = RaceResult & {
   driver: Driver;

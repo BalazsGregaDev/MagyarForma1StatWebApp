@@ -8,8 +8,8 @@
 // ---------------------------------------------------------------------
 import React, { useEffect, useState } from "react";
 import AdminCrud, { type FieldDef } from "./AdminCrud";
-import api from "../lib/api";
-import type { GrandPrix, Circuit } from "../lib/database.types";
+import api from "../../api";
+import type { GrandPrix, Circuit } from "../../database.types";
 
 const AdminGrandPrixPage: React.FC = () => {
   const [circuits, setCircuits] = useState<Circuit[]>([]);

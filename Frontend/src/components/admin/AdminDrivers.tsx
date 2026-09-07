@@ -14,10 +14,10 @@
 // ---------------------------------------------------------------------
 import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import api from "../lib/api";
-import type { Driver, Constructor } from "../lib/database.types";
-import DriverAvatar from "../components/DriverAvatar";
-import "../styles/driver.css";
+import api from "../../api";
+import type { Driver, Constructor } from "../../database.types";
+import DriverAvatar from "../DriverAvatar";
+import "../../Styles/driver.css";
 
 interface DriverForm {
   Name: string;

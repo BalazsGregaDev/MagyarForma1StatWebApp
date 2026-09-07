@@ -8,28 +8,28 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
 
 // Mindkét változónév elfogadott. A Supabase 2026 végével megszünteti a régi
 // JWT-alapú anon kulcsot; az új, sb_publishable_ előtagú kulcs a helyes érték.
 const supabaseAnonKey =
-  process.env.REACT_APP_SUPABASE_PUBLISHABLE_KEY ??
-  process.env.REACT_APP_SUPABASE_ANON_KEY;
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+  import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   const hiba = [
-    !supabaseUrl && "REACT_APP_SUPABASE_URL",
-    !supabaseAnonKey &&
-      "REACT_APP_SUPABASE_PUBLISHABLE_KEY (vagy REACT_APP_SUPABASE_ANON_KEY)",
+    !supabaseUrl && "VITE_SUPABASE_URL",
+    !supabaseAnonKey && "VITE_SUPABASE_PUBLISHABLE_KEY",
   ]
     .filter(Boolean)
     .join(" és ");
 
   throw new Error(
     `Hiányzó Supabase konfiguráció: ${hiba}. ` +
-      "Lokálisan: Frontend/.env.local, majd npm start újraindítás. " +
-      "Vercelen: Settings -> Environment Variables (Production is!), " +
-      "majd Redeploy build cache NÉLKÜL — a CRA build időben égeti be az értékeket.",
+      "Lokálisan: Frontend/.env.local, majd a dev szerver ÚJRAINDÍTÁSA " +
+      "(a Vite csak induláskor olvassa a .env fájlokat). " +
+      "Vercelen: Settings -> Environment Variables, majd Redeploy.",
   );
 }
 

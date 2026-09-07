@@ -8,16 +8,16 @@
 // ---------------------------------------------------------------------
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import api, { teamGradient } from "../../lib/api";
+import api, { teamGradient } from "../api";
 import type {
   GrandPrix,
   Circuit,
   Driver,
   Constructor,
   RaceResult,
-} from "../../lib/database.types";
-import DriverAvatar from "../../components/DriverAvatar";
-import "../../styles/grandprix.css";
+} from "../database.types";
+import DriverAvatar from "../components/DriverAvatar";
+import "../Styles/grandprix.css";
 
 type FullGP = GrandPrix & { circuit: Circuit | null; winner: Driver | null };
 type ResultRow = RaceResult & { driver: Driver; constructor: Constructor };

@@ -1,35 +1,37 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 
-import Navbar from "./components/navbar";
+
+
+import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-import HomePage from "./pages/home";
-import GrandPrixPage from "./pages/grand_prix";
-import DriversPage from "./pages/driver";
-import ConstructorPage from "./pages/constructors";
-import CircuitPage from "./pages/circuit";
-import LoginPage from "./pages/login";
-import StatisticsPage from "./pages/statistics";
+import HomePage from "./components/Home";
+import GrandPrixPage from "./components/GrandPrix";
+import DriversPage from "./components/Drivers";
+import ConstructorPage from "./components/Constructors";
+import CircuitPage from "./components/Circuits";
+import LoginPage from "./components/Login";
+import StatisticsPage from "./components/Statistics";
 
-import AdminDriverPage from "./adminPages/adminDriverPage";
-import AdminGrandPrixPage from "./adminPages/adminGrandPrixPage";
-import AdminConstructorPage from "./components/admin/adminConstructors";
-import AdminCircuitPage from "./components/admin/adminCircuits";
-import AdminStatisticsPage from "./adminPages/adminStatistics";
+import DriverDetailPage from "./components/DriverDetail";
+import GrandPrixDetailPage from "./components/GrandPrixDetail";
+import ConstructorDetailPage from "./components/ConstructorDetail";
+import CircuitDetailPage from "./components/CircuitDetail";
 
-import DriverDetailPage from "./pages/detailPages/driverDetail";
-import GrandPrixDetailPage from "./pages/detailPages/grandPrixDetail";
-import ConstructorDetailPage from "./pages/detailPages/constructorDetail";
-import CircuitDetailPage from "./pages/detailPages/circuitDetail";
+import AdminDriverPage from "./components/admin/AdminDrivers";
+import AdminGrandPrixPage from "./components/admin/AdminGrandPrix";
+import AdminConstructorPage from "./components/admin/AdminConstructors";
+import AdminCircuitPage from "./components/admin/AdminCircuits";
+import AdminStatisticsPage from "./components/admin/AdminResults";
 
-import { ThemeProvider } from "./components/themeContext";
+import { ThemeProvider } from "./components/ThemeContext";
 import { AuthProvider } from "./AuthContext";
 import { SITE_NAME } from "./config";
 
-import "./styles/index.css";
-import "./styles/navbar.css";
-import "./styles/home.css";
+import "./Styles/index.css";
+import "./Styles/navbar.css";
+import "./Styles/home.css";
 
 const admin = (element: React.ReactNode) => (
   <ProtectedRoute>{element}</ProtectedRoute>

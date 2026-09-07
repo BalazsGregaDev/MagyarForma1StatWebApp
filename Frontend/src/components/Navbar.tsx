@@ -11,7 +11,7 @@
 // ---------------------------------------------------------------------
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useTheme } from "./themeContext";
+import { useTheme } from "./ThemeContext";
 import { useAuth } from "../AuthContext";
 import { SITE_NAME } from "../config";
 

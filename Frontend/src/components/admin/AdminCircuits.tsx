@@ -8,7 +8,7 @@
 //  Itt a mezők a tényleges séma szerint szerepelnek.
 // ---------------------------------------------------------------------
 import React from "react";
-import AdminCrud, { type FieldDef } from "../../adminPages/AdminCrud";
+import AdminCrud, { type FieldDef } from "./AdminCrud";
 import api, { formatLapTime } from "../../api";
 import type { Circuit } from "../../database.types";
 

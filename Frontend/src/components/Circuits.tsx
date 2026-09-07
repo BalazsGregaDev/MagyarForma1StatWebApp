@@ -10,7 +10,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api, { formatLapTime } from "../api";
 import type { Circuit } from "../database.types";
 import { useAuth } from "../AuthContext";
-import "../styles/circuit.css";
+import "../Styles/circuit.css";
 
 const CircuitPage: React.FC = () => {
   const [circuits, setCircuits] = useState<Circuit[]>([]);

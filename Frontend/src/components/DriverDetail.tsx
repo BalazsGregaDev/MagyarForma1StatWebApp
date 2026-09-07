@@ -3,9 +3,9 @@
 // ---------------------------------------------------------------------
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import api, { formatLapTime } from "../../lib/api";
-import type { Circuit, GrandPrix } from "../../lib/database.types";
-import "../../styles/circuit.css";
+import api, { formatLapTime } from "../api";
+import type { Circuit, GrandPrix } from "../database.types";
+import "../Styles/circuit.css";
 
 type CircuitWithRaces = Circuit & { grandprix: GrandPrix[] };
 
