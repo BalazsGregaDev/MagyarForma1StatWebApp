@@ -41,6 +41,9 @@ const AdminSync: React.FC = () => {
   const [lines, setLines] = useState<LineItem[]>([]);
   const [running, setRunning] = useState(false);
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [manualYear, setManualYear] = useState("");
+  const [meetingYear, setMeetingYear] = useState("");
+  const [meetingKey, setMeetingKey] = useState("");
   const stopRef = useRef(false);
 
   const say = useCallback((text: string, kind: LineItem["kind"] = "info") => {
@@ -75,8 +78,8 @@ const AdminSync: React.FC = () => {
     setLog((data ?? []) as SyncLogRow[]);
 
     const tables = ["grandprix", "drivers", "constructors", "race_result", "circuits"] as const;
-     const next: Record<string, number> = {};
-    for (const t of ["grandprix", "drivers", "constructors", "race_result", "circuits"] as const) {
+    const next: Record<string, number> = {};
+    for (const t of tables) {
       const { count } = await supabase.from(t).select("*", { count: "exact", head: true });
       next[t] = count ?? 0;
     }
@@ -174,14 +177,75 @@ const AdminSync: React.FC = () => {
           say("Megállítva.", "warn");
           break;
         }
-        say(`${y} — naptár, versenyzők, eredmények…`);
-        try {
-          const res = await invoke({ task: "full", season: y });
-          say(`${y} kész — ${res.upserted ?? 0} sor.`, "ok");
-        } catch (e) {
-          say(`${y}: ${e instanceof Error ? e.message : String(e)}`, "error");
+
+        // A `full` task EGY hívásban végzi a naptárat, a versenyzőket és
+        // mind a ~24 futam eredményét — ez túllépi a Supabase Edge
+        // Function compute-korlátját (546-os hiba). Három külön hívás
+        // bőven belefér. A sorrend kötött: a `drivers` a `calendar`
+        // session-kulcsaira épül, a `results` a versenyző-leképezésre.
+        const steps = [
+          { task: "calendar", label: "naptár" },
+          { task: "drivers", label: "versenyzők" },
+          { task: "results", label: "eredmények" },
+        ] as const;
+
+        let failed = false;
+        for (const s of steps) {
+          if (stopRef.current) break;
+          say(`${y} — ${s.label}…`);
+          try {
+            const res = await invoke({ task: s.task, season: y });
+            say(`${y} ${s.label}: ${res.upserted ?? 0} sor.`, "ok");
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            say(`${y} ${s.label}: ${msg}`, "error");
+            if (msg.includes("RESOURCE_LIMIT") || msg.includes("compute")) {
+              say(
+                `A ${s.label} lépés túllépte a futásidő-korlátot. ` +
+                  `Próbáld futamonként: alább az "Egy futam" mező.`,
+                "warn",
+              );
+            }
+            failed = true;
+            break; // a következő lépés erre épülne
+          }
         }
+        if (failed && years.length > 1) break;
       }
+    } finally {
+      setRunning(false);
+      await refresh();
+    }
+  };
+
+  /** Egyetlen futam eredménye — ha a teljes szezon túllépi a korlátot. */
+  const runOneMeeting = async (year: number, meetingKey: number) => {
+    setRunning(true);
+    setLines([]);
+    try {
+      say(`${year} / meeting ${meetingKey} — eredmények…`);
+      const res = await invoke({ task: "results", season: year, meetingKey });
+      say(`Kész — ${res.upserted ?? 0} sor.`, "ok");
+    } catch (e) {
+      say(`${e instanceof Error ? e.message : String(e)}`, "error");
+    } finally {
+      setRunning(false);
+      await refresh();
+    }
+  };
+
+  /** Tetszőleges történelmi év újrafuttatása. A nextUnsyncedSeason
+   *  mindig a legnagyobb kész év utánit adja, ezért egy közbenső évet
+   *  (pl. a hiányos időmérőjű 1994-2002) másképp nem lehet pótolni. */
+  const runOneHistorical = async (year: number) => {
+    setRunning(true);
+    setLines([]);
+    try {
+      say(`${year} újraszinkronizálása…`);
+      const res = await invoke({ task: "historical", season: year });
+      say(`${year} kész — ${res.upserted ?? 0} sor.`, "ok");
+    } catch (e) {
+      say(`${year}: ${e instanceof Error ? e.message : String(e)}`, "error");
     } finally {
       setRunning(false);
       await refresh();
@@ -272,6 +336,30 @@ const AdminSync: React.FC = () => {
             13 szezon (kb. egy órányi keret)
           </button>
         </div>
+
+        {/* Adott év újrafuttatása — hiányos szezonok pótlásához */}
+        <div className="admin-actions" style={{ marginTop: "0.75rem" }}>
+          <input
+            type="number"
+            min={JOLPICA_FIRST}
+            max={JOLPICA_LAST}
+            placeholder="Év"
+            value={manualYear}
+            onChange={(e) => setManualYear(e.target.value)}
+            style={{ width: 100 }}
+          />
+          <button
+            type="button"
+            className="btn"
+            disabled={running || !manualYear}
+            onClick={() => runOneHistorical(Number(manualYear))}
+          >
+            Adott év újra
+          </button>
+          <span style={{ opacity: 0.6, fontSize: ".85rem", alignSelf: "center" }}>
+            Hiányos szezon pótlásához (pl. 1994-2002 időmérő)
+          </span>
+        </div>
       </section>
 
       {/* ---------- OpenF1 ---------- */}
@@ -300,6 +388,35 @@ const AdminSync: React.FC = () => {
           >
             Mind
           </button>
+        </div>
+
+        {/* Egy futam — ha a teljes szezon túllépi a futásidő-korlátot */}
+        <div className="admin-actions" style={{ marginTop: "0.75rem" }}>
+          <input
+            type="number"
+            placeholder="Év"
+            value={meetingYear}
+            onChange={(e) => setMeetingYear(e.target.value)}
+            style={{ width: 90 }}
+          />
+          <input
+            type="number"
+            placeholder="meeting_key"
+            value={meetingKey}
+            onChange={(e) => setMeetingKey(e.target.value)}
+            style={{ width: 130 }}
+          />
+          <button
+            type="button"
+            className="btn"
+            disabled={running || !meetingYear || !meetingKey}
+            onClick={() => runOneMeeting(Number(meetingYear), Number(meetingKey))}
+          >
+            Egy futam
+          </button>
+          <span style={{ opacity: 0.6, fontSize: ".85rem", alignSelf: "center" }}>
+            A kulcsokhoz: SELECT openf1_meeting_key, "Round", "Name" FROM grandprix WHERE "Year" = …
+          </span>
         </div>
       </section>
 
