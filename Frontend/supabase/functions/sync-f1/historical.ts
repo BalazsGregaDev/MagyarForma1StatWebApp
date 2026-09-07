@@ -342,7 +342,7 @@ export async function syncHistoricalSeason(
             DriverID: await cache.driver(res.Driver),
             ConstructorID: await cache.team(res.Constructor),
             Position: classified ? Number(res.position) : null,
-            Grid: res.grid && Number(res.grid) > 0 ? Number(res.grid) : null,
+            Grid: res.grid ? Number(res.grid) : null,
             Laps: res.laps ? Number(res.laps) : null,
             TimeOrRetired: res.Time?.time ?? res.status ?? null,
             FastestLap: false,
