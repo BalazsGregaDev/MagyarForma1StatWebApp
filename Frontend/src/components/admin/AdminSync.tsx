@@ -193,6 +193,60 @@ const AdminSync: React.FC = () => {
         for (const s of steps) {
           if (stopRef.current) break;
           say(`${y} — ${s.label}…`);
+
+          // Az eredmények lépés FUTAMONKÉNT megy.
+          //
+          // A syncResults futamonként négy OpenF1-kérést indít: eredmény,
+          // rajtrács, időmérő, plusz a köridőket a leggyorsabb kör
+          // kiszámolásához. Egy 24 futamos szezonra ez ~96 kérés, a
+          // 3 kérés/mp rate limit miatt percekig tartó várakozással —
+          // az Edge Function futásidő-korlátja ezt elvágja (546).
+          if (s.task === "results") {
+            const { data: gps, error: gpErr } = await supabase
+              .from("grandprix")
+              .select("openf1_meeting_key, Round, Name")
+              .eq("Year", y)
+              .not("openf1_meeting_key", "is", null)
+              .order("Round");
+
+            if (gpErr) {
+              say(`${y} eredmények: ${gpErr.message}`, "error");
+              failed = true;
+              break;
+            }
+
+            const meetings = (gps ?? []) as {
+              openf1_meeting_key: number;
+              Round: number | null;
+              Name: string;
+            }[];
+
+            let total = 0;
+            let errors = 0;
+            for (const gp of meetings) {
+              if (stopRef.current) break;
+              const label = `${gp.Round ?? "?"}. ${gp.Name}`;
+              try {
+                const res = await invoke({
+                  task: "results",
+                  season: y,
+                  meetingKey: gp.openf1_meeting_key,
+                });
+                total += res.upserted ?? 0;
+                say(`   ${label}: ${res.upserted ?? 0} sor.`, "ok");
+              } catch (e) {
+                errors++;
+                say(`   ${label}: ${e instanceof Error ? e.message : String(e)}`, "error");
+              }
+            }
+            say(
+              `${y} eredmények összesen: ${total} sor` +
+                (errors ? `, ${errors} futam hibára futott.` : "."),
+              errors ? "warn" : "ok",
+            );
+            continue;
+          }
+
           try {
             const res = await invoke({ task: s.task, season: y });
             say(`${y} ${s.label}: ${res.upserted ?? 0} sor.`, "ok");

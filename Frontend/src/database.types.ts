@@ -9,6 +9,12 @@
 // ---------------------------------------------------------------------
 
 export type Circuit = {
+  openf1_circuit_key: number | null;
+  jolpica_ref: string | null;
+  country_code: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  data_source: string;
   CircuitID: number;
   Name: string;
   Location: string | null;
@@ -28,6 +34,12 @@ export type Circuit = {
 }
 
 export type Constructor = {
+  openf1_team_name: string | null;
+  jolpica_ref: string | null;
+  country_code: string | null;
+  first_year: number | null;
+  last_year: number | null;
+  data_source: string;
   ConstructorID: number;
   Name: string;
   Nationality: string | null;
@@ -49,6 +61,13 @@ export type Constructor = {
 }
 
 export type Driver = {
+  openf1_driver_number: number | null;
+  jolpica_ref: string | null;
+  country_code: string | null;
+  date_of_death: string | null;
+  place_of_birth: string | null;
+  wikipedia_url: string | null;
+  data_source: string;
   DriverID: number;
   Name: string;
   ConstructorID: number | null;
@@ -66,6 +85,17 @@ export type Driver = {
 }
 
 export type GrandPrix = {
+  /* --- 03_openf1 / 04_historikus / 07_forrasok migrációk --- */
+  openf1_meeting_key: number | null;
+  openf1_session_key: number | null;
+  openf1_sprint_key: number | null;
+  openf1_quali_key: number | null;
+  jolpica_round: number | null;
+  is_indy500: boolean;
+  half_points: boolean;
+  scheduled_laps: number | null;
+  official_name: string | null;
+  data_source: string;
   GrandPrixID: number;
   Name: string;
   Country: string | null;
@@ -80,6 +110,12 @@ export type GrandPrix = {
 }
 
 export type RaceResult = {
+  status_id: number | null;
+  is_classified: boolean | null;
+  car_number: number | null;
+  shared_drive_group: number | null;
+  grid_penalty: number | null;
+  data_source: string;
   ResultID: number;
   GrandPrixID: number;
   DriverID: number;

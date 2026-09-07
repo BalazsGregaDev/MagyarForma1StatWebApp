@@ -1,0 +1,10 @@
+supabase service role key secret
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indzc2FxZXJ6anN0eGhobmdiZ3RlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzcwMDg5OCwiZXhwIjoyMTAzMjc2ODk4fQ.wBbgdrR_43A1QPhWmkwi99T-wxAYo72rfYcbwu7BTNE
+
+VITE_SUPABASE_URL=https://wssaqerzjstxhhngbgte.supabase.co
+
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_Tqx6JXS0nyK2bYusk3rwfQ_1shOe-Tc
+
+
+
+OPENF1_API_KEY=
