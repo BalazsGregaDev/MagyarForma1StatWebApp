@@ -9,9 +9,11 @@
 // ---------------------------------------------------------------------
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "../lib/AuthContext";
+import { useAuth } from "../AuthContext";
 
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const { isAdmin, loading } = useAuth();
   const location = useLocation();
 

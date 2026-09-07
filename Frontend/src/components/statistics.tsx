@@ -10,13 +10,13 @@
 //  a sprintgyőzelmek is futamgyőzelemnek számítottak (Verstappen 13 vs 9).
 // ---------------------------------------------------------------------
 import React, { useCallback, useEffect, useState } from "react";
-import api, { teamGradient } from "../lib/api";
+import api, { teamGradient } from "../api";
 import type {
   DriverStanding,
   ConstructorStanding,
   DriverStatsResult,
   ConstructorStatsResult,
-} from "../lib/database.types";
+} from "../database.types";
 import DriverAvatar from "../components/DriverAvatar";
 import "../styles/statistics.css";
 
@@ -25,11 +25,16 @@ type Tab = "drivers" | "constructors";
 const StatisticsPage: React.FC = () => {
   const [tab, setTab] = useState<Tab>("drivers");
   const [driverStandings, setDriverStandings] = useState<DriverStanding[]>([]);
-  const [constructorStandings, setConstructorStandings] = useState<ConstructorStanding[]>([]);
+  const [constructorStandings, setConstructorStandings] = useState<
+    ConstructorStanding[]
+  >([]);
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [driverStats, setDriverStats] = useState<DriverStatsResult | null>(null);
-  const [constructorStats, setConstructorStats] = useState<ConstructorStatsResult | null>(null);
+  const [driverStats, setDriverStats] = useState<DriverStatsResult | null>(
+    null,
+  );
+  const [constructorStats, setConstructorStats] =
+    useState<ConstructorStatsResult | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(false);
@@ -39,7 +44,10 @@ const StatisticsPage: React.FC = () => {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    Promise.all([api.statistics.driverStandings(), api.statistics.constructorStandings()])
+    Promise.all([
+      api.statistics.driverStandings(),
+      api.statistics.constructorStandings(),
+    ])
       .then(([d, c]) => {
         if (!active) return;
         setDriverStandings(d);
@@ -67,7 +75,11 @@ const StatisticsPage: React.FC = () => {
           setDriverStats(null);
         }
       } catch (e) {
-        setError(e instanceof Error ? e.message : "A statisztika betöltése nem sikerült.");
+        setError(
+          e instanceof Error
+            ? e.message
+            : "A statisztika betöltése nem sikerült.",
+        );
       } finally {
         setStatsLoading(false);
       }
@@ -88,8 +100,12 @@ const StatisticsPage: React.FC = () => {
     setConstructorStats(null);
   };
 
-  const stats = tab === "drivers" ? driverStats?.driver : constructorStats?.constructor;
-  const chart = tab === "drivers" ? driverStats?.points_chart : constructorStats?.points_chart;
+  const stats =
+    tab === "drivers" ? driverStats?.driver : constructorStats?.constructor;
+  const chart =
+    tab === "drivers"
+      ? driverStats?.points_chart
+      : constructorStats?.points_chart;
   const maxPoints = Math.max(1, ...(chart ?? []).map((c) => Number(c.points)));
 
   if (loading) return <div className="page-state">Betöltés…</div>;
@@ -136,7 +152,11 @@ const StatisticsPage: React.FC = () => {
           <tbody>
             {tab === "drivers"
               ? driverStandings.map((d, i) => (
-                  <tr key={d.DriverID} onClick={() => select(d.DriverID)} className="clickable">
+                  <tr
+                    key={d.DriverID}
+                    onClick={() => select(d.DriverID)}
+                    className="clickable"
+                  >
                     <td>{i + 1}</td>
                     <td>
                       <DriverAvatar
@@ -221,7 +241,9 @@ const StatisticsPage: React.FC = () => {
                 </div>
                 <div className="stat-card">
                   <span className="stat-value">
-                    {stats.races > 0 ? (Number(stats.points) / stats.races).toFixed(1) : "0.0"}
+                    {stats.races > 0
+                      ? (Number(stats.points) / stats.races).toFixed(1)
+                      : "0.0"}
                   </span>
                   <span className="stat-label">Átlagpont / futam</span>
                 </div>
@@ -229,7 +251,11 @@ const StatisticsPage: React.FC = () => {
 
               <div className="points-chart">
                 {(chart ?? []).map((c) => (
-                  <div key={c.GrandPrixID} className="chart-column" title={c.grand_prix_name}>
+                  <div
+                    key={c.GrandPrixID}
+                    className="chart-column"
+                    title={c.grand_prix_name}
+                  >
                     <div
                       className="chart-bar"
                       style={{
@@ -239,7 +265,9 @@ const StatisticsPage: React.FC = () => {
                     />
                     <span className="chart-value">{Number(c.points)}</span>
                     <span className="chart-label">
-                      {(c.Country ?? c.grand_prix_name).slice(0, 3).toUpperCase()}
+                      {(c.Country ?? c.grand_prix_name)
+                        .slice(0, 3)
+                        .toUpperCase()}
                     </span>
                   </div>
                 ))}

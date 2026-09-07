@@ -20,7 +20,7 @@ import React, {
   useCallback,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { supabase, readableError } from "./supabase";
+import { supabase, readableError } from "./supabaseClient";
 
 interface AuthState {
   session: Session | null;
@@ -62,11 +62,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     // Token-frissítés, kijelentkezés, másik fülön való bejelentkezés
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, next) => {
-      if (!active) return;
-      setSession(next);
-      await refreshRole(next);
-    });
+    const { data: sub } = supabase.auth.onAuthStateChange(
+      async (_event, next) => {
+        if (!active) return;
+        setSession(next);
+        await refreshRole(next);
+      },
+    );
 
     return () => {
       active = false;
@@ -74,15 +76,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [refreshRole]);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) throw new Error(readableError(error));
-    setSession(data.session);
-    await refreshRole(data.session);
-  }, [refreshRole]);
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw new Error(readableError(error));
+      setSession(data.session);
+      await refreshRole(data.session);
+    },
+    [refreshRole],
+  );
 
   const signOut = useCallback(async () => {
     // A régi navbar csak a localStorage-ot ürítette, a szerveroldali
@@ -111,7 +116,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 export function useAuth(): AuthState {
   const ctx = useContext(AuthContext);
   if (!ctx) {
-    throw new Error("A useAuth() csak az <AuthProvider> fán belül használható.");
+    throw new Error(
+      "A useAuth() csak az <AuthProvider> fán belül használható.",
+    );
   }
   return ctx;
 }

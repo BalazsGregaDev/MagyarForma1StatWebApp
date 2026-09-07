@@ -7,9 +7,9 @@
 // ---------------------------------------------------------------------
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api, { teamGradient } from "../lib/api";
-import type { Constructor } from "../lib/database.types";
-import { useAuth } from "../lib/AuthContext";
+import api, { teamGradient } from "../api";
+import type { Constructor } from "../database.types";
+import { useAuth } from "../AuthContext";
 import "../styles/constructor.css";
 
 const ConstructorPage: React.FC = () => {
@@ -69,7 +69,12 @@ const ConstructorPage: React.FC = () => {
           >
             <div className="constructor-top">
               {c.Image ? (
-                <img src={c.Image} alt={c.Name} className="constructor-logo" loading="lazy" />
+                <img
+                  src={c.Image}
+                  alt={c.Name}
+                  className="constructor-logo"
+                  loading="lazy"
+                />
               ) : (
                 <span
                   className="constructor-logo"
@@ -90,7 +95,9 @@ const ConstructorPage: React.FC = () => {
             </div>
 
             <div className="constructor-details">
-              <span className="constructor-nationality">{c.Nationality ?? "—"}</span>
+              <span className="constructor-nationality">
+                {c.Nationality ?? "—"}
+              </span>
               <span className="constructor-info">
                 {c.FoundedYear ? `Alapítva: ${c.FoundedYear}` : ""}
                 {c.TeamPrincipal ? ` · ${c.TeamPrincipal}` : ""}

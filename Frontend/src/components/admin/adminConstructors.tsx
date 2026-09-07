@@ -3,8 +3,8 @@
 // ---------------------------------------------------------------------
 import React from "react";
 import AdminCrud, { type FieldDef } from "./AdminCrud";
-import api, { teamGradient } from "../lib/api";
-import type { Constructor } from "../lib/database.types";
+import api, { teamGradient } from "../../api";
+import type { Constructor } from "../../database.types";
 
 const fields: FieldDef<Constructor>[] = [
   { key: "Name", label: "Név", required: true },

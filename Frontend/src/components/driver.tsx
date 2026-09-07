@@ -7,9 +7,9 @@
 // ---------------------------------------------------------------------
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api, { teamGradient } from "../lib/api";
-import type { Driver, Constructor } from "../lib/database.types";
-import { useAuth } from "../lib/AuthContext";
+import api, { teamGradient } from "../api";
+import type { Driver, Constructor } from "../database.types";
+import { useAuth } from "../AuthContext";
 import DriverAvatar from "../components/DriverAvatar";
 import "../styles/driver.css";
 
@@ -62,7 +62,9 @@ const DriversPage: React.FC = () => {
             role="button"
             tabIndex={0}
             onClick={() => navigate(`/driver/${driver.DriverID}`)}
-            onKeyDown={(e) => e.key === "Enter" && navigate(`/driver/${driver.DriverID}`)}
+            onKeyDown={(e) =>
+              e.key === "Enter" && navigate(`/driver/${driver.DriverID}`)
+            }
             style={{ background: teamGradient(colourOf(driver.ConstructorID)) }}
           >
             <DriverAvatar

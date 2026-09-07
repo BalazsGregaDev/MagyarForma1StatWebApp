@@ -9,7 +9,7 @@
 // ---------------------------------------------------------------------
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../lib/AuthContext";
+import { useAuth } from "../AuthContext";
 import "../styles/login.css";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -17,7 +17,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({});
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    form?: string;
+  }>({});
   const [submitting, setSubmitting] = useState(false);
 
   const { signIn, isAdmin } = useAuth();
@@ -28,9 +32,11 @@ const LoginPage: React.FC = () => {
   const validate = () => {
     const next: typeof errors = {};
     if (!email.trim()) next.email = "Az e-mail cím megadása kötelező.";
-    else if (!EMAIL_RE.test(email)) next.email = "Az e-mail cím formátuma érvénytelen.";
+    else if (!EMAIL_RE.test(email))
+      next.email = "Az e-mail cím formátuma érvénytelen.";
     if (!password) next.password = "A jelszó megadása kötelező.";
-    else if (password.length < 6) next.password = "A jelszó legalább 6 karakter.";
+    else if (password.length < 6)
+      next.password = "A jelszó legalább 6 karakter.";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -43,7 +49,10 @@ const LoginPage: React.FC = () => {
       await signIn(email.trim(), password);
       navigate(from, { replace: true });
     } catch (err) {
-      setErrors({ form: err instanceof Error ? err.message : "A bejelentkezés nem sikerült." });
+      setErrors({
+        form:
+          err instanceof Error ? err.message : "A bejelentkezés nem sikerült.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -89,7 +98,9 @@ const LoginPage: React.FC = () => {
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           disabled={submitting}
         />
-        {errors.password && <span className="login-error">{errors.password}</span>}
+        {errors.password && (
+          <span className="login-error">{errors.password}</span>
+        )}
 
         {/* FONTOS: <form> helyett gomb + onClick. React artifactokban és
             SPA-ban a form submit teljes oldalújratöltést okozhat. */}

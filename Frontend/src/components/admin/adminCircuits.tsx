@@ -8,9 +8,9 @@
 //  Itt a mezők a tényleges séma szerint szerepelnek.
 // ---------------------------------------------------------------------
 import React from "react";
-import AdminCrud, { type FieldDef } from "./AdminCrud";
-import api, { formatLapTime } from "../lib/api";
-import type { Circuit } from "../lib/database.types";
+import AdminCrud, { type FieldDef } from "../../adminPages/AdminCrud";
+import api, { formatLapTime } from "../../api";
+import type { Circuit } from "../../database.types";
 
 const fields: FieldDef<Circuit>[] = [
   { key: "Name", label: "Név", required: true },
@@ -32,14 +32,24 @@ const fields: FieldDef<Circuit>[] = [
     help: "Formátum: óra:perc:másodperc.ezred. Egy 1:16.627-es kör = 00:01:16.627",
     render: (c) => formatLapTime(c.RecordLapTime),
   },
-  { key: "Image", label: "Pályarajz URL", inTable: false, placeholder: "https://…" },
+  {
+    key: "Image",
+    label: "Pályarajz URL",
+    inTable: false,
+    placeholder: "https://…",
+  },
   {
     key: "image_author",
     label: "Kép szerzője",
     inTable: false,
     help: "CC-licencű képnél kötelező. OSM-alapú saját rajznál: © OpenStreetMap contributors",
   },
-  { key: "image_license", label: "Kép licence", inTable: false, placeholder: "CC BY-SA 4.0 / ODbL" },
+  {
+    key: "image_license",
+    label: "Kép licence",
+    inTable: false,
+    placeholder: "CC BY-SA 4.0 / ODbL",
+  },
   { key: "image_source_url", label: "Kép forrás URL", inTable: false },
 ];
 

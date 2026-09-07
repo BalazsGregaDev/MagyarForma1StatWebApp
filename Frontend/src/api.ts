@@ -17,7 +17,7 @@
 //  try/catch-csel kezelhesse — a régi kódban a hibák néma console.error-ban
 //  végződtek, és a felhasználó üres oldalt látott.
 // ---------------------------------------------------------------------
-import { supabase, readableError } from "./supabase";
+import { supabase, readableError } from "./supabaseClient";
 import type {
   Circuit,
   Constructor,
@@ -44,7 +44,10 @@ function unwrap<T>(res: { data: T | null; error: unknown }): T {
 export const drivers = {
   async list(): Promise<Driver[]> {
     return unwrap(
-      await supabase.from("drivers").select("*").order("Name", { ascending: true }),
+      await supabase
+        .from("drivers")
+        .select("*")
+        .order("Name", { ascending: true }),
     );
   },
 
@@ -78,7 +81,13 @@ export const drivers = {
   },
 
   async create(payload: Partial<Driver>): Promise<Driver> {
-    return unwrap(await supabase.from("drivers").insert(payload as any).select().single());
+    return unwrap(
+      await supabase
+        .from("drivers")
+        .insert(payload as any)
+        .select()
+        .single(),
+    );
   },
 
   async update(id: number, payload: Partial<Driver>): Promise<Driver> {
@@ -93,7 +102,10 @@ export const drivers = {
   },
 
   async remove(id: number): Promise<void> {
-    const { error } = await supabase.from("drivers").delete().eq("DriverID", id);
+    const { error } = await supabase
+      .from("drivers")
+      .delete()
+      .eq("DriverID", id);
     if (error) throw new Error(readableError(error));
   },
 };
@@ -103,7 +115,9 @@ export const drivers = {
 // =====================================================================
 export const constructors = {
   async list(): Promise<Constructor[]> {
-    return unwrap(await supabase.from("constructors").select("*").order("Name"));
+    return unwrap(
+      await supabase.from("constructors").select("*").order("Name"),
+    );
   },
 
   /** Csapat a jelenlegi pilótáival együtt. */
@@ -120,17 +134,28 @@ export const constructors = {
 
   async get(id: number): Promise<Constructor> {
     return unwrap(
-      await supabase.from("constructors").select("*").eq("ConstructorID", id).single(),
+      await supabase
+        .from("constructors")
+        .select("*")
+        .eq("ConstructorID", id)
+        .single(),
     );
   },
 
   async create(payload: Partial<Constructor>): Promise<Constructor> {
     return unwrap(
-      await supabase.from("constructors").insert(payload as any).select().single(),
+      await supabase
+        .from("constructors")
+        .insert(payload as any)
+        .select()
+        .single(),
     );
   },
 
-  async update(id: number, payload: Partial<Constructor>): Promise<Constructor> {
+  async update(
+    id: number,
+    payload: Partial<Constructor>,
+  ): Promise<Constructor> {
     return unwrap(
       await supabase
         .from("constructors")
@@ -177,7 +202,13 @@ export const circuits = {
   },
 
   async create(payload: Partial<Circuit>): Promise<Circuit> {
-    return unwrap(await supabase.from("circuits").insert(payload as any).select().single());
+    return unwrap(
+      await supabase
+        .from("circuits")
+        .insert(payload as any)
+        .select()
+        .single(),
+    );
   },
 
   async update(id: number, payload: Partial<Circuit>): Promise<Circuit> {
@@ -192,7 +223,10 @@ export const circuits = {
   },
 
   async remove(id: number): Promise<void> {
-    const { error } = await supabase.from("circuits").delete().eq("CircuitID", id);
+    const { error } = await supabase
+      .from("circuits")
+      .delete()
+      .eq("CircuitID", id);
     if (error) throw new Error(readableError(error));
   },
 };
@@ -205,7 +239,9 @@ export const grandPrix = {
     let q = supabase.from("grandprix").select("*");
     if (year) q = q.eq("Year", year);
     return unwrap(
-      await q.order("Year", { ascending: false }).order("Round", { ascending: true }),
+      await q
+        .order("Year", { ascending: false })
+        .order("Round", { ascending: true }),
     );
   },
 
@@ -214,7 +250,9 @@ export const grandPrix = {
     const data = unwrap(
       await supabase
         .from("grandprix")
-        .select("*, circuit:circuits(*), winner:drivers!grandprix_winnerdriverid_fkey(*)")
+        .select(
+          "*, circuit:circuits(*), winner:drivers!grandprix_winnerdriverid_fkey(*)",
+        )
         .eq("GrandPrixID", id)
         .single(),
     );
@@ -243,14 +281,21 @@ export const grandPrix = {
   /** Elérhető szezonok – a szezonválasztó dropdownhoz. */
   async seasons(): Promise<number[]> {
     const data = unwrap(
-      await supabase.from("grandprix").select("Year").order("Year", { ascending: false }),
+      await supabase
+        .from("grandprix")
+        .select("Year")
+        .order("Year", { ascending: false }),
     );
     return Array.from(new Set((data as { Year: number }[]).map((r) => r.Year)));
   },
 
   async create(payload: Partial<GrandPrix>): Promise<GrandPrix> {
     return unwrap(
-      await supabase.from("grandprix").insert(payload as any).select().single(),
+      await supabase
+        .from("grandprix")
+        .insert(payload as any)
+        .select()
+        .single(),
     );
   },
 
@@ -268,7 +313,10 @@ export const grandPrix = {
   },
 
   async remove(id: number): Promise<void> {
-    const { error } = await supabase.from("grandprix").delete().eq("GrandPrixID", id);
+    const { error } = await supabase
+      .from("grandprix")
+      .delete()
+      .eq("GrandPrixID", id);
     if (error) throw new Error(readableError(error));
   },
 };
@@ -297,7 +345,9 @@ export const raceResults = {
   /** FONTOS: a Points mezőt NE küldd – a b_assign_points trigger számolja. */
   async create(payload: Partial<RaceResult>): Promise<RaceResult> {
     const { Points, ...safe } = payload as any;
-    return unwrap(await supabase.from("race_result").insert(safe).select().single());
+    return unwrap(
+      await supabase.from("race_result").insert(safe).select().single(),
+    );
   },
 
   async update(id: number, payload: Partial<RaceResult>): Promise<RaceResult> {
@@ -313,7 +363,10 @@ export const raceResults = {
   },
 
   async remove(id: number): Promise<void> {
-    const { error } = await supabase.from("race_result").delete().eq("ResultID", id);
+    const { error } = await supabase
+      .from("race_result")
+      .delete()
+      .eq("ResultID", id);
     if (error) throw new Error(readableError(error));
   },
 };
@@ -338,7 +391,11 @@ export const qualifying = {
 
   async create(payload: Partial<QualifyingResult>) {
     return unwrap(
-      await supabase.from("qualifying_result").insert(payload as any).select().single(),
+      await supabase
+        .from("qualifying_result")
+        .insert(payload as any)
+        .select()
+        .single(),
     );
   },
 
@@ -392,7 +449,9 @@ export const statistics = {
   },
 
   async driver(id: number): Promise<DriverStatsResult> {
-    const { data, error } = await supabase.rpc("driver_stats", { p_driver_id: id });
+    const { data, error } = await supabase.rpc("driver_stats", {
+      p_driver_id: id,
+    });
     if (error) throw new Error(readableError(error));
     return data as unknown as DriverStatsResult;
   },

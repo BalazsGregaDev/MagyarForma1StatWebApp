@@ -12,8 +12,8 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTheme } from "./themeContext";
-import { useAuth } from "../lib/AuthContext";
-import { SITE_NAME } from "./Footer";
+import { useAuth } from "../AuthContext";
+import { SITE_NAME } from "../config";
 
 const LINKS = [
   { to: "/", label: "Kezdőlap" },
@@ -52,13 +52,21 @@ const Navbar: React.FC = () => {
           ))}
 
           {isAdmin && (
-            <Link to="/admin/drivers" className="navbar-link navbar-link--admin" title="Adminisztráció">
+            <Link
+              to="/admin/drivers"
+              className="navbar-link navbar-link--admin"
+              title="Adminisztráció"
+            >
               ⚙
             </Link>
           )}
 
           {session ? (
-            <button type="button" className="navbar-link navbar-button" onClick={handleLogout}>
+            <button
+              type="button"
+              className="navbar-link navbar-button"
+              onClick={handleLogout}
+            >
               Kijelentkezés
             </button>
           ) : (

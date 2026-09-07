@@ -7,9 +7,9 @@
 // ---------------------------------------------------------------------
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api, { formatLapTime } from "../lib/api";
-import type { Circuit } from "../lib/database.types";
-import { useAuth } from "../lib/AuthContext";
+import api, { formatLapTime } from "../api";
+import type { Circuit } from "../database.types";
+import { useAuth } from "../AuthContext";
 import "../styles/circuit.css";
 
 const CircuitPage: React.FC = () => {
@@ -54,7 +54,9 @@ const CircuitPage: React.FC = () => {
             role="button"
             tabIndex={0}
             onClick={() => navigate(`/circuit/${c.CircuitID}`)}
-            onKeyDown={(e) => e.key === "Enter" && navigate(`/circuit/${c.CircuitID}`)}
+            onKeyDown={(e) =>
+              e.key === "Enter" && navigate(`/circuit/${c.CircuitID}`)
+            }
           >
             <div className="circuit-top">
               <div>
@@ -65,7 +67,11 @@ const CircuitPage: React.FC = () => {
               </div>
               {c.Image && (
                 <div className="circuit-image-wrap">
-                  <img src={c.Image} alt={`${c.Name} pályarajz`} loading="lazy" />
+                  <img
+                    src={c.Image}
+                    alt={`${c.Name} pályarajz`}
+                    loading="lazy"
+                  />
                 </div>
               )}
             </div>

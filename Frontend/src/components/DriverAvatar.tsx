@@ -17,7 +17,7 @@
 //  ha nincs, visszaesik a generált avatarra.
 // ---------------------------------------------------------------------
 import React from "react";
-import { teamGradient } from "../lib/api";
+import { teamGradient } from "../api";
 
 interface Props {
   name: string;
@@ -107,7 +107,14 @@ const DriverAvatar: React.FC<Props> = ({
       </defs>
 
       {/* Fekete kontrasztos border – a pixel art stílushoz igazodva */}
-      <circle cx="60" cy="60" r="57" fill={`url(#${gradId})`} stroke="#000" strokeWidth="6" />
+      <circle
+        cx="60"
+        cy="60"
+        r="57"
+        fill={`url(#${gradId})`}
+        stroke="#000"
+        strokeWidth="6"
+      />
 
       {variant === "helmet" ? (
         <>
@@ -119,10 +126,19 @@ const DriverAvatar: React.FC<Props> = ({
             stroke="#000"
             strokeWidth="3"
           />
-          <path d="M40 58h34c2 0 3 2 2 4l-3 6H42c-2 0-3-2-2-4z" fill={colour} stroke="#000" strokeWidth="2" />
+          <path
+            d="M40 58h34c2 0 3 2 2 4l-3 6H42c-2 0-3-2-2-4z"
+            fill={colour}
+            stroke="#000"
+            strokeWidth="2"
+          />
           <text
-            x="60" y="100" textAnchor="middle"
-            fontSize="18" fontWeight="800" fill={fg}
+            x="60"
+            y="100"
+            textAnchor="middle"
+            fontSize="18"
+            fontWeight="800"
+            fill={fg}
             fontFamily="'Segoe UI', system-ui, sans-serif"
             letterSpacing="1"
           >
@@ -148,10 +164,15 @@ const DriverAvatar: React.FC<Props> = ({
           </text>
           {variant === "number" && acronym && (
             <text
-              x="60" y="96" textAnchor="middle"
-              fontSize="15" fontWeight="700" fill={fg}
+              x="60"
+              y="96"
+              textAnchor="middle"
+              fontSize="15"
+              fontWeight="700"
+              fill={fg}
               fontFamily="'Segoe UI', system-ui, sans-serif"
-              letterSpacing="2" opacity="0.85"
+              letterSpacing="2"
+              opacity="0.85"
             >
               {acronym}
             </text>

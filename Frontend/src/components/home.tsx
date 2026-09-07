@@ -10,16 +10,23 @@
 // ---------------------------------------------------------------------
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import api, { teamGradient, type NewsItem } from "../lib/api";
-import type { Driver, Constructor } from "../lib/database.types";
+import api, { teamGradient, type NewsItem } from "../api";
+import type { Driver, Constructor } from "../database.types";
 import DriverAvatar from "../components/DriverAvatar";
 import "../styles/home.css";
 
 /** "Ezen a napon" – statikus, saját szerkesztésű tartalom.
  *  Bővíthető; kulcs formátuma "MM-DD". */
 const F1_HISTORY: Record<string, { year: number; text: string }[]> = {
-  "05-13": [{ year: 1950, text: "Az első Formula 1 világbajnoki futam Silverstone-ban." }],
-  "08-04": [{ year: 2024, text: "Oscar Piastri első futamgyőzelme Magyarországon." }],
+  "05-13": [
+    {
+      year: 1950,
+      text: "Az első Formula 1 világbajnoki futam Silverstone-ban.",
+    },
+  ],
+  "08-04": [
+    { year: 2024, text: "Oscar Piastri első futamgyőzelme Magyarországon." },
+  ],
 };
 
 function todayKey(): string {
@@ -75,7 +82,10 @@ const HomePage: React.FC = () => {
   }, [autoRotate, newsItems.length]);
 
   const history = useMemo(
-    () => F1_HISTORY[todayKey()] ?? [{ year: 1950, text: "A Formula 1 világbajnokság első szezonja." }],
+    () =>
+      F1_HISTORY[todayKey()] ?? [
+        { year: 1950, text: "A Formula 1 világbajnokság első szezonja." },
+      ],
     [],
   );
 
@@ -172,7 +182,9 @@ const HomePage: React.FC = () => {
                     key={d.DriverID}
                     to={`/driver/${d.DriverID}`}
                     className="home-mini-card"
-                    style={{ background: teamGradient(colourOf(d.ConstructorID)) }}
+                    style={{
+                      background: teamGradient(colourOf(d.ConstructorID)),
+                    }}
                   >
                     <DriverAvatar
                       name={d.Name}

@@ -7,9 +7,9 @@
 // ---------------------------------------------------------------------
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api from "../lib/api";
-import type { GrandPrix } from "../lib/database.types";
-import { useAuth } from "../lib/AuthContext";
+import api from "../api";
+import type { GrandPrix } from "../database.types";
+import { useAuth } from "../AuthContext";
 import "../styles/grandprix.css";
 
 /** Az ország zászlószíneit a hover-effekthez a CSS oldja meg
@@ -33,7 +33,9 @@ const GrandPrixPage: React.FC = () => {
         setSeasons(s);
         setYear(s[0] ?? null);
       })
-      .catch((e) => active && setError(e instanceof Error ? e.message : "Hiba"));
+      .catch(
+        (e) => active && setError(e instanceof Error ? e.message : "Hiba"),
+      );
     return () => {
       active = false;
     };

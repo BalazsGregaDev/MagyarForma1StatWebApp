@@ -79,3 +79,35 @@ body[data-theme="light"] .driver-detail-bio p {
 }
 
 .site-footer__meta { opacity: 0.5; font-size: 0.75rem; }
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.content { flex: 1; }
+
+.site-footer {
+  margin-top: 4rem;
+  padding: 2rem 1.5rem;
+  border-top: 3px solid #e10600;
+  text-align: center;
+}
+
+.site-footer__brand {
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.site-footer__disclaimer {
+  max-width: 62ch;
+  margin: 1rem auto 0.5rem;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  opacity: 0.55;
+}
+
+.site-footer__meta { font-size: 0.75rem; opacity: 0.5; }
