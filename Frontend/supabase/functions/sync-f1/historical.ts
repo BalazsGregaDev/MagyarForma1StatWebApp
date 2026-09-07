@@ -230,6 +230,23 @@ export async function syncHistoricalSeason(
       }
     }
 
+     const byPosition = new Map<number, typeof batch>();
+    for (const row of batch) {
+      const pos = row.Position as number | null;
+      if (pos == null) continue;
+      const list = byPosition.get(pos) ?? [];
+      list.push(row);
+      byPosition.set(pos, list);
+    }
+
+    let group = 0;
+    for (const [, rows] of byPosition) {
+      if (rows.length > 1) {
+        group++;
+        for (const row of rows) row.shared_drive_group = group;
+      }
+    }
+
     const { error } = await db
       .from("race_result")
       .upsert(batch, { onConflict: "GrandPrixID,DriverID,GpOrSprint" });
