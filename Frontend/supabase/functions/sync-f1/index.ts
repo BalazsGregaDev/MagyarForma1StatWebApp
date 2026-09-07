@@ -45,12 +45,21 @@ import {
   type Session,
 } from "./providers.ts";
 
+import { JolpicaProvider } from "./jolpica.ts";
+import {
+  syncHistoricalSeason,
+  nextUnsyncedSeason,
+  JOLPICA_FIRST_SEASON,
+  JOLPICA_LAST_SEASON,
+} from "./historical.ts";
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type Task = "calendar" | "drivers" | "results" | "detail" | "latest" | "full";
+type Task =
+  | "calendar" | "drivers" | "results" | "detail" | "latest" | "full" | "historical";
 
 interface Body {
   task?: Task;
@@ -59,6 +68,8 @@ interface Body {
   meetingKey?: number;
   /** "detail" taskhoz: köridők és időjárás is (lassabb, több kérés) */
   includeLaps?: boolean;
+  /** historical: hány szezont dolgozzon fel egy hívásban (alap: 1) */
+  seasons?: number;
 }
 
 /* ===================================================================== */
@@ -68,29 +79,47 @@ Deno.serve(async (req: Request) => {
 
   // Csak a service_role kulccsal hívható. Az anon kulccsal érkező kérést
   // elutasítjuk: a szinkron ír az adatbázisba.
-  const auth = req.headers.get("Authorization") ?? "";
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  if (!serviceKey || !auth.includes(serviceKey)) {
-    return json({ error: "Jogosulatlan. A szinkron csak a secret kulccsal hívható." }, 401);
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const bearer = authHeader.replace(/^Bearer\s+/i, "").trim();
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const anonKey     = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+  if (!bearer) return json({ error: "Hiányzó Authorization fejléc." }, 401);
+
+  let authorised = serviceKey !== "" && bearer === serviceKey;
+
+  if (!authorised) {
+    const caller = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: `Bearer ${bearer}` } },
+      auth: { persistSession: false },
+    });
+    const { data: isAdmin, error: adminError } = await caller.rpc("is_admin");
+    if (adminError) {
+      return json({ error: `Jogosultság-ellenőrzés sikertelen: ${adminError.message}` }, 401);
+    }
+    authorised = isAdmin === true;
+  }
+
+  if (!authorised) {
+    return json({ error: "Ehhez adminisztrátori jogosultság kell." }, 403);
   }
 
   const body: Body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
   const task: Task = body.task ?? "results";
   const season = body.season ?? new Date().getUTCFullYear();
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    serviceKey,
-    { auth: { persistSession: false } },
-  );
+  const supabase = createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false },
+  });
 
   const provider = new OpenF1Provider(Deno.env.get("OPENF1_API_KEY") ?? undefined);
 
-  if (season < provider.earliestSeason) {
+  if (task !== "historical" && season < provider.earliestSeason) {
     return json(
-      {
-        error: `Az OpenF1 ${provider.earliestSeason}-tól ad adatot. A ${season}-es szezonhoz Jolpica kellene.`,
-      },
+      { error: `Az OpenF1 ${provider.earliestSeason}-tól ad adatot. ` +
+               `A ${season}-es szezonhoz használd a "historical" taskot.` },
       400,
     );
   }
@@ -121,6 +150,42 @@ Deno.serve(async (req: Request) => {
           (await syncDrivers(supabase, provider, season)) +
           (await syncResults(supabase, provider, season));
         break;
+      case "historical": {
+        const jolpica = new JolpicaProvider(Deno.env.get("JOLPICA_API_TOKEN") ?? undefined);
+        const howMany = Math.max(1, Math.min(body.seasons ?? 1, 20));
+        const done: number[] = [];
+
+        for (let i = 0; i < howMany; i++) {
+          const y = body.season && i === 0
+            ? body.season
+            : await nextUnsyncedSeason(supabase);
+
+          if (y === null) break;
+          if (y < JOLPICA_FIRST_SEASON || y > JOLPICA_LAST_SEASON) {
+            throw new Error(
+              `A historical task ${JOLPICA_FIRST_SEASON}-${JOLPICA_LAST_SEASON} ` +
+              `közötti évekre való. ${y}-hez használd a "results" taskot (OpenF1).`,
+            );
+          }
+
+          const seasonLog = await startLog(supabase, "jolpica", "historical", y);
+          try {
+            const n = await syncHistoricalSeason(supabase, jolpica, y);
+            upserted += n;
+            done.push(y);
+            await finishLog(supabase, seasonLog, "ok", n, jolpica.requestCount);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            await finishLog(supabase, seasonLog, "error", 0, jolpica.requestCount, msg);
+            if (msg.includes("Folytasd később") || msg.includes("órás limit")) break;
+            throw e;
+          }
+        }
+
+        await finishLog(supabase, log, "ok", upserted, jolpica.requestCount,
+                        `Feldolgozott szezonok: ${done.join(", ") || "nincs"}`);
+        return json({ task, seasons: done, upserted, requests: jolpica.requestCount });
+      }
       default:
         throw new Error(`Ismeretlen task: ${task}`);
     }

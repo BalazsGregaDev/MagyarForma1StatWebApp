@@ -24,6 +24,7 @@ import AdminGrandPrixPage from "./components/admin/AdminGrandPrix";
 import AdminConstructorPage from "./components/admin/AdminConstructors";
 import AdminCircuitPage from "./components/admin/AdminCircuits";
 import AdminStatisticsPage from "./components/admin/AdminResults";
+import AdminSyncPage from "./components/admin/AdminSync";
 
 import { ThemeProvider } from "./components/ThemeContext";
 import { AuthProvider } from "./AuthContext";
@@ -81,6 +82,7 @@ const App: React.FC = () => (
                 path="/admin/statistics"
                 element={admin(<AdminStatisticsPage />)}
               />
+              <Route path="/admin/sync" element={admin(<AdminSyncPage />)} />
 
               <Route
                 path="*"

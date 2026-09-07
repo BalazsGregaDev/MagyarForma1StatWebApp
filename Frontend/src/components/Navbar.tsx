@@ -51,15 +51,24 @@ const Navbar: React.FC = () => {
             </Link>
           ))}
 
-          {isAdmin && (
-            <Link
-              to="/admin/drivers"
-              className="navbar-link navbar-link--admin"
-              title="Adminisztráció"
-            >
-              ⚙
-            </Link>
-          )}
+         {isAdmin && (
+  <>
+    <Link
+      to="/admin/drivers"
+      className="navbar-link navbar-link--admin"
+      title="Adminisztráció"
+    >
+      ⚙
+    </Link>
+    <Link
+      to="/admin/sync"
+      className="navbar-link navbar-link--admin"
+      title="Adatszinkron"
+    >
+      ⟳
+    </Link>
+  </>
+)}
 
           {session ? (
             <button
