@@ -53,3 +53,29 @@ body[data-theme="light"] .driver-detail-bio {
 body[data-theme="light"] .driver-detail-bio p {
   color: #333;
 }
+
+
+.site-footer {
+  margin-top: 4rem;
+  padding: 2rem 1.5rem;
+  border-top: 3px solid #e10600;
+  text-align: center;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.site-footer__links {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.site-footer__disclaimer {
+  max-width: 60ch;
+  margin: 0 auto 0.75rem;
+  opacity: 0.65;
+  font-size: 0.75rem;
+}
+
+.site-footer__meta { opacity: 0.5; font-size: 0.75rem; }

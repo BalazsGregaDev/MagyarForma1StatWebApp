@@ -17,10 +17,19 @@ const supabaseAnonKey =
   process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
+  const hiba = [
+    !supabaseUrl && "REACT_APP_SUPABASE_URL",
+    !supabaseAnonKey &&
+      "REACT_APP_SUPABASE_PUBLISHABLE_KEY (vagy REACT_APP_SUPABASE_ANON_KEY)",
+  ]
+    .filter(Boolean)
+    .join(" és ");
+
   throw new Error(
-    "Hiányzó Supabase konfiguráció. Hozz létre egy .env.local fájlt a Frontend/ " +
-      "mappában REACT_APP_SUPABASE_URL és REACT_APP_SUPABASE_ANON_KEY értékekkel, " +
-      "majd indítsd újra a fejlesztői szervert.",
+    `Hiányzó Supabase konfiguráció: ${hiba}. ` +
+      "Lokálisan: Frontend/.env.local, majd npm start újraindítás. " +
+      "Vercelen: Settings -> Environment Variables (Production is!), " +
+      "majd Redeploy build cache NÉLKÜL — a CRA build időben égeti be az értékeket.",
   );
 }
 
