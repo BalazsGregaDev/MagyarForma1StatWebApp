@@ -1,0 +1,133 @@
+.circuit-card {
+  position: relative;
+  z-index: 2;
+  border-radius: 16px;
+  padding: 1.2rem;
+  background: linear-gradient(135deg, #1a1a2e, #2c2c3f);
+  color: white;
+  cursor: pointer;
+  overflow: hidden;
+min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+
+  transition: all 0.25s ease;
+}
+
+.circuit-card:hover {
+  transform: translateY(-4px);
+  background: linear-gradient(135deg, #23233a, #3a3a55);
+}
+
+.circuit-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  z-index: 2;
+}
+
+.circuit-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.circuit-location {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+.circuits-grid {
+  width: 80%;
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  
+}
+
+.stat {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  
+}
+
+.stat span {
+  font-size: 0.75rem;
+  opacity: 0.6;
+  
+}
+
+.stat strong {
+  font-size: 1rem;
+  font-weight: 600;
+  
+}
+
+.stat.full {
+  grid-column: span 2;
+  
+}
+.circuit-image-wrap {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+
+  width: 45%;
+  max-width: 180px;
+
+  opacity: 0.9; 
+  pointer-events: none;
+  z-index: 1;
+
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.circuit-image-wrap img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+
+  filter: brightness(1.5) contrast(1.1);
+}
+
+.circuit-stats-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  z-index: 2;
+  
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  font-size: 0.85rem;
+  padding: 0.2rem 0;
+
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.row span {
+  opacity: 0.6;
+}
+
+.row strong {
+  font-weight: 600;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.circuit-card:hover .row {
+  border-color: rgba(255,255,255,0.2);
+}

@@ -1,0 +1,112 @@
+* {
+  box-sizing: border-box;
+}
+
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: linear-gradient(135deg, #0f0f1a, #1c1c2e);
+}
+
+.login-form {
+  width: 100%;
+  max-width: 380px;
+
+  padding: 2rem;
+  border-radius: 16px;
+
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(10px);
+
+  border: 1px solid rgba(255,255,255,0.1);
+
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.login-form h2 {
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: 1px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-group label {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+
+  background: rgba(255,255,255,0.05);
+  color: white;
+
+  font-size: 0.95rem;
+
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #e10600;
+  box-shadow: 0 0 0 2px rgba(225, 6, 0, 0.3);
+}
+
+.form-group input.error {
+  border-color: #ff4d4f;
+}
+
+.form-group input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error-message {
+  font-size: 0.75rem;
+  color: #ff4d4f;
+}
+
+.submit-button {
+  margin-top: 0.5rem;
+  padding: 0.7rem;
+
+  border-radius: 8px;
+  border: none;
+
+  background: #e10600;
+  color: white;
+
+  font-weight: 600;
+  font-size: 0.95rem;
+
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: #ff1e1e;
+  transform: translateY(-1px);
+}
+
+.submit-button:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
