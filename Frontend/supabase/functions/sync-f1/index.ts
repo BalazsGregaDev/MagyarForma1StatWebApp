@@ -45,21 +45,12 @@ import {
   type Session,
 } from "./providers.ts";
 
-import { JolpicaProvider } from "./jolpica.ts";
-import {
-  syncHistoricalSeason,
-  nextUnsyncedSeason,
-  JOLPICA_FIRST_SEASON,
-  JOLPICA_LAST_SEASON,
-} from "./historical.ts";
-
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type Task =
-  | "calendar" | "drivers" | "results" | "detail" | "latest" | "full" | "historical";
+type Task = "calendar" | "drivers" | "results" | "detail" | "latest" | "full";
 
 interface Body {
   task?: Task;
@@ -68,8 +59,6 @@ interface Body {
   meetingKey?: number;
   /** "detail" taskhoz: köridők és időjárás is (lassabb, több kérés) */
   includeLaps?: boolean;
-  /** historical: hány szezont dolgozzon fel egy hívásban (alap: 1) */
-  seasons?: number;
 }
 
 /* ===================================================================== */
@@ -79,47 +68,29 @@ Deno.serve(async (req: Request) => {
 
   // Csak a service_role kulccsal hívható. Az anon kulccsal érkező kérést
   // elutasítjuk: a szinkron ír az adatbázisba.
-  const authHeader = req.headers.get("Authorization") ?? "";
-  const bearer = authHeader.replace(/^Bearer\s+/i, "").trim();
-
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const anonKey     = Deno.env.get("SUPABASE_ANON_KEY")!;
-  const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-
-  if (!bearer) return json({ error: "Hiányzó Authorization fejléc." }, 401);
-
-  let authorised = serviceKey !== "" && bearer === serviceKey;
-
-  if (!authorised) {
-    const caller = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: `Bearer ${bearer}` } },
-      auth: { persistSession: false },
-    });
-    const { data: isAdmin, error: adminError } = await caller.rpc("is_admin");
-    if (adminError) {
-      return json({ error: `Jogosultság-ellenőrzés sikertelen: ${adminError.message}` }, 401);
-    }
-    authorised = isAdmin === true;
-  }
-
-  if (!authorised) {
-    return json({ error: "Ehhez adminisztrátori jogosultság kell." }, 403);
+  const auth = req.headers.get("Authorization") ?? "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  if (!serviceKey || !auth.includes(serviceKey)) {
+    return json({ error: "Jogosulatlan. A szinkron csak a secret kulccsal hívható." }, 401);
   }
 
   const body: Body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
   const task: Task = body.task ?? "results";
   const season = body.season ?? new Date().getUTCFullYear();
 
-  const supabase = createClient(supabaseUrl, serviceKey, {
-    auth: { persistSession: false },
-  });
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    serviceKey,
+    { auth: { persistSession: false } },
+  );
 
   const provider = new OpenF1Provider(Deno.env.get("OPENF1_API_KEY") ?? undefined);
 
-  if (task !== "historical" && season < provider.earliestSeason) {
+  if (season < provider.earliestSeason) {
     return json(
-      { error: `Az OpenF1 ${provider.earliestSeason}-tól ad adatot. ` +
-               `A ${season}-es szezonhoz használd a "historical" taskot.` },
+      {
+        error: `Az OpenF1 ${provider.earliestSeason}-tól ad adatot. A ${season}-es szezonhoz Jolpica kellene.`,
+      },
       400,
     );
   }
@@ -150,42 +121,6 @@ Deno.serve(async (req: Request) => {
           (await syncDrivers(supabase, provider, season)) +
           (await syncResults(supabase, provider, season));
         break;
-      case "historical": {
-        const jolpica = new JolpicaProvider(Deno.env.get("JOLPICA_API_TOKEN") ?? undefined);
-        const howMany = Math.max(1, Math.min(body.seasons ?? 1, 20));
-        const done: number[] = [];
-
-        for (let i = 0; i < howMany; i++) {
-          const y = body.season && i === 0
-            ? body.season
-            : await nextUnsyncedSeason(supabase);
-
-          if (y === null) break;
-          if (y < JOLPICA_FIRST_SEASON || y > JOLPICA_LAST_SEASON) {
-            throw new Error(
-              `A historical task ${JOLPICA_FIRST_SEASON}-${JOLPICA_LAST_SEASON} ` +
-              `közötti évekre való. ${y}-hez használd a "results" taskot (OpenF1).`,
-            );
-          }
-
-          const seasonLog = await startLog(supabase, "jolpica", "historical", y);
-          try {
-            const n = await syncHistoricalSeason(supabase, jolpica, y);
-            upserted += n;
-            done.push(y);
-            await finishLog(supabase, seasonLog, "ok", n, jolpica.requestCount);
-          } catch (e) {
-            const msg = e instanceof Error ? e.message : String(e);
-            await finishLog(supabase, seasonLog, "error", 0, jolpica.requestCount, msg);
-            if (msg.includes("Folytasd később") || msg.includes("órás limit")) break;
-            throw e;
-          }
-        }
-
-        await finishLog(supabase, log, "ok", upserted, jolpica.requestCount,
-                        `Feldolgozott szezonok: ${done.join(", ") || "nincs"}`);
-        return json({ task, seasons: done, upserted, requests: jolpica.requestCount });
-      }
       default:
         throw new Error(`Ismeretlen task: ${task}`);
     }
@@ -280,67 +215,61 @@ async function renumberRounds(db: SupabaseClient, season: number) {
 /* =====================================================================
    TASK: DRIVERS – versenyzők és csapatok
    ===================================================================== */
+
 async function syncDrivers(
   db: SupabaseClient,
   api: F1DataProvider,
   season: number,
 ): Promise<number> {
-  // MINDEN futam mezőnyét bejárjuk, nem csak az utolsóét.
-  //
-  // Korábban csak a legutóbbi futam ~20 pilótája kapott OpenF1-számot,
-  // és az upsertRaceResults minden más sort kiszűrt. Egy szezonban
-  // viszont 24-26 pilóta fordul meg: sérülések, csereversenyzők,
-  // évközi váltások miatt.
+  // A legutóbbi futam mezőnye a mérvadó az aktuális csapatokra.
   const { data: races } = await db
     .from("grandprix")
     .select("openf1_session_key")
     .eq("Year", season)
     .not("openf1_session_key", "is", null)
-    .order("RaceDate", { ascending: false });
+    .order("RaceDate", { ascending: false })
+    .limit(1);
 
-  const sessionKeys = (races ?? [])
-    .map((r) => (r as { openf1_session_key: number }).openf1_session_key)
-    .filter(Boolean);
+  const sessionKey = (races?.[0] as { openf1_session_key: number } | undefined)
+    ?.openf1_session_key;
+  if (!sessionKey) throw new Error("Nincs futam session_key. Futtasd előbb a 'calendar' taskot.");
 
-  if (!sessionKeys.length) {
-    throw new Error("Nincs futam session_key. Futtasd előbb a 'calendar' taskot.");
-  }
-
-  const seen = new Set<number>();
+  const drivers = await api.drivers(sessionKey);
   let n = 0;
 
-  for (const sessionKey of sessionKeys) {
-    const drivers = await api.drivers(sessionKey);
+  for (const d of drivers) {
+    const colour = normaliseColour(d.team_colour);
 
-    for (const d of drivers) {
-      if (seen.has(d.driver_number)) continue;   // már megvan
-      seen.add(d.driver_number);
-
-      const colour = normaliseColour(d.team_colour);
-
-      const { data: team } = await db
-        .from("constructors")
-        .upsert(
-          { openf1_team_name: d.team_name, Name: d.team_name, TeamColour: colour },
-          { onConflict: "openf1_team_name" },
-        )
-        .select("ConstructorID")
-        .single();
-
-      const { error } = await db.from("drivers").upsert(
+    const { data: team } = await db
+      .from("constructors")
+      .upsert(
         {
-          openf1_driver_number: d.driver_number,
-          DriverNumber: d.driver_number,
-          Name: d.full_name,
-          Acronym: d.name_acronym,
-          Nationality: d.country_code,
-          ConstructorID: team?.ConstructorID ?? null,
+          openf1_team_name: d.team_name,
+          Name: d.team_name,
+          TeamColour: colour,
         },
-        { onConflict: "openf1_driver_number" },
-      );
-      if (error) throw new Error(`drivers upsert: ${error.message}`);
-      n++;
-    }
+        { onConflict: "openf1_team_name" },
+      )
+      .select("ConstructorID")
+      .single();
+
+    // FIGYELEM: a headshot_url mezőt SZÁNDÉKOSAN nem vesszük át.
+    // Az a media.formula1.com-ra mutat, és szerzői jogvédett
+    // (lásd kephasznalat_es_jogok.md). Helyette a DriverAvatar
+    // komponens generál SVG-t a rajtszámból és a csapatszínből.
+    const { error } = await db.from("drivers").upsert(
+      {
+        openf1_driver_number: d.driver_number,
+        DriverNumber: d.driver_number,
+        Name: d.full_name,
+        Acronym: d.name_acronym,
+        Nationality: d.country_code,
+        ConstructorID: team?.ConstructorID ?? null,
+      },
+      { onConflict: "openf1_driver_number" },
+    );
+    if (error) throw new Error(`drivers upsert: ${error.message}`);
+    n++;
   }
   return n;
 }

@@ -74,9 +74,9 @@ const AdminSync: React.FC = () => {
       .limit(30);
     setLog((data ?? []) as SyncLogRow[]);
 
-    const tables = ["grandprix", "drivers", "constructors", "race_result", "circuits"];
-    const next: Record<string, number> = {};
-    for (const t of tables) {
+    const tables = ["grandprix", "drivers", "constructors", "race_result", "circuits"] as const;
+     const next: Record<string, number> = {};
+    for (const t of ["grandprix", "drivers", "constructors", "race_result", "circuits"] as const) {
       const { count } = await supabase.from(t).select("*", { count: "exact", head: true });
       next[t] = count ?? 0;
     }
